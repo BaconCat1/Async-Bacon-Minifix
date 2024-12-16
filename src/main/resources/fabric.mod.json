@@ -39,7 +39,10 @@
     "lithium:options": {
       "entity.inactive_navigations": false,
       "experimental.entity.item_entity_merging": false,
-      "entity.collisions.unpushable_cramming": false
+      "entity.collisions.unpushable_cramming": false,
+      "entity.fast_retrieval": false,
+      "chunk.serialization": false,
+      "chunk.palette": false
     }
   },
   "suggests": {
