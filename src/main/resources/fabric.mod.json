@@ -42,7 +42,8 @@
       "entity.collisions.unpushable_cramming": false,
       "entity.fast_retrieval": false,
       "chunk.serialization": false,
-      "chunk.palette": false
+      "chunk.palette": false,
+      "ai.poi": false
     }
   },
   "suggests": {

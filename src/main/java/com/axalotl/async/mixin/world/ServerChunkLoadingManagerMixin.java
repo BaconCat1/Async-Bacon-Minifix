@@ -27,15 +27,21 @@ public abstract class ServerChunkLoadingManagerMixin extends VersionedChunkStora
     @Shadow
     @Final
     @Mutable
-    private Int2ObjectMap<ServerChunkLoadingManager.EntityTracker> entityTrackers = new Int2ObjectConcurrentHashMap<>();
+    private Int2ObjectMap<ServerChunkLoadingManager.EntityTracker> entityTrackers;
 
     @Shadow
     @Final
     @Mutable
-    private List<ChunkLoader> loaders = new CopyOnWriteArrayList<>();
+    private List<ChunkLoader> loaders;
 
     public ServerChunkLoadingManagerMixin(StorageKey storageKey, Path directory, DataFixer dataFixer, boolean dsync) {
         super(storageKey, directory, dataFixer, dsync);
+    }
+
+    @Inject(method = "<init>", at = @At("TAIL"))
+    private void replaceConVars(CallbackInfo ci) {
+        entityTrackers = new Int2ObjectConcurrentHashMap<>();
+        loaders = new CopyOnWriteArrayList<>();
     }
 
     @WrapMethod(method = "release")

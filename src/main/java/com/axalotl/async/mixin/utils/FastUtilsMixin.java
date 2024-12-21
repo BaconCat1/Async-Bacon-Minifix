@@ -39,7 +39,13 @@ import org.spongepowered.asm.mixin.Mixin;
                 "it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap",
                 "it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet",
                 "it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap",
-                "it.unimi.dsi.fastutil.objects.Reference2ReferenceArrayMap"
+                "it.unimi.dsi.fastutil.objects.Reference2ReferenceArrayMap",
+                "it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap$ValueIterator",
+                "it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap$KeySet",
+                "it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap$KeyIterator",
+                "it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap$MapEntrySet",
+                "it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap$EntryIterator",
+                "it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap$MapIterator"
         }, priority = 50000)
 public class FastUtilsMixin {
 }

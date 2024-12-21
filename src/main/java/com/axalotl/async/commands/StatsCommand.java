@@ -11,111 +11,152 @@ import net.minecraft.util.Formatting;
 
 import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.axalotl.async.commands.AsyncCommand.prefix;
 import static net.minecraft.server.command.CommandManager.literal;
 
 public class StatsCommand {
-    static final int samples = 100;
-    static final int stepsPer = 35;
-    static int[] maxThreads = new int[samples];
-    static int currentSteps = 0;
-    static int currentPos = 0;
-    static int liveValues = 0;
-    static int[] maxEntities = new int[samples];
-    static int entityCurrentSteps = 0;
-    static int entityCurrentPos = 0;
-    static int entityLiveValues = 0;
-    static Thread statsThread;
-    static boolean resetThreadStats = false;
+    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#,##0.##");
+    private static final int MAX_SAMPLES = 20;
+    private static final long SAMPLING_INTERVAL_MS = 100;
+
+    private static final Queue<Integer> threadSamples = new ConcurrentLinkedQueue<>();
+    private static volatile boolean isRunning = true;
+    private static Thread statsThread;
 
     public static LiteralArgumentBuilder<ServerCommandSource> registerStatus(LiteralArgumentBuilder<ServerCommandSource> root) {
         return root.then(literal("stats")
                 .executes(cmdCtx -> {
-                    String threadMessageString = "Current max threads: ";
-                    MutableText message = prefix.copy()
-                            .append(Text.literal(threadMessageString).styled(style -> style.withColor(Formatting.WHITE)))
-                            .append(Text.literal(String.valueOf(new DecimalFormat("#.##").format(mean(maxThreads, liveValues)))).styled(style -> style.withColor(Formatting.GREEN)));
-                    cmdCtx.getSource().sendFeedback(() -> message, true);
+                    showGeneralStats(cmdCtx.getSource());
                     return 1;
                 })
                 .then(literal("entity")
                         .executes(cmdCtx -> {
-                            ServerCommandSource source = cmdCtx.getSource();
-                            MinecraftServer server = source.getServer();
-                            String headerMessageString = "Entity count by world: ";
-                            MutableText message = prefix.copy()
-                                    .append(Text.literal(headerMessageString).styled(style -> style.withColor(Formatting.WHITE)));
-                            server.getWorlds().forEach(world -> {
-                                String worldName = world.getRegistryKey().getValue().toString();
-                                AtomicInteger entityCount = new AtomicInteger();
-                                world.entityList.forEach(entity -> {
-                                    if (entity.isAlive()) {
-                                        entityCount.incrementAndGet();
-                                    }
-                                });
-                                message.append(Text.literal("\n" + worldName + ": ").styled(style -> style.withColor(Formatting.YELLOW)))
-                                        .append(Text.literal(String.valueOf(entityCount.get())).styled(style -> style.withColor(Formatting.GREEN)));
-                            });
-                            source.sendFeedback(() -> message, true);
+                            showEntityStats(cmdCtx.getSource());
                             return 1;
                         })));
     }
 
-    public static void resetAll() {
-        resetThreadStats = true;
+    private static void showGeneralStats(ServerCommandSource source) {
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        double avgThreads = calculateAverageThreads();
+        double threadUtilization = (avgThreads / availableProcessors) * 100.0;
+
+        MutableText message = prefix.copy()
+                .append(Text.literal("Performance Statistics ").styled(style -> style.withColor(Formatting.GOLD)))
+                .append(Text.literal("\nActive Processing Threads: ").styled(style -> style.withColor(Formatting.WHITE)))
+                .append(Text.literal(DECIMAL_FORMAT.format(avgThreads)).styled(style -> style.withColor(Formatting.GREEN)))
+                .append(Text.literal(" / " + availableProcessors).styled(style -> style.withColor(Formatting.GRAY)))
+                .append(Text.literal("\nThread Utilization: ").styled(style -> style.withColor(Formatting.WHITE)))
+                .append(Text.literal(DECIMAL_FORMAT.format(threadUtilization) + "%").styled(style -> style.withColor(Formatting.GREEN)))
+                .append(Text.literal("\nAsync Status: ").styled(style -> style.withColor(Formatting.WHITE)))
+                .append(Text.literal(AsyncConfig.disabled ? "Disabled" : "Enabled").styled(style ->
+                        style.withColor(AsyncConfig.disabled ? Formatting.RED : Formatting.GREEN)));
+
+        source.sendFeedback(() -> message, true);
     }
 
-    public static float mean(int[] data, int max) {
-        float total = 0;
-        for (int i = 0; i < max; i++) {
-            total += data[i];
-        }
-        total /= max;
-        return total;
-    }
+    private static void showEntityStats(ServerCommandSource source) {
+        MinecraftServer server = source.getServer();
+        MutableText message = prefix.copy()
+                .append(Text.literal("Entity Statistics ").styled(style -> style.withColor(Formatting.GOLD)));
 
+        AtomicInteger totalEntities = new AtomicInteger(0);
+        AtomicInteger totalAsyncEntities = new AtomicInteger(0);
 
-    public static void runStatsThread() {
-        statsThread = new Thread(() -> {
-            try {
-                while (true) {
-                    Thread.sleep(10);
-                    if (resetThreadStats) {
-                        maxThreads = new int[samples];
-                        currentSteps = 0;
-                        currentPos = 0;
-                        liveValues = 0;
-                        resetThreadStats = false;
-                    }
-                    if (!AsyncConfig.disabled) {
-                        if (++currentSteps % stepsPer == 0) {
-                            currentPos = (currentPos + 1) % samples;
-                            liveValues = Math.min(liveValues + 1, samples);
-                            maxThreads[currentPos] = 0;
-                        }
-                        int entities = ParallelProcessor.currentEntities.get();
-                        maxThreads[currentPos] = Math.max(maxThreads[currentPos], entities);
+        server.getWorlds().forEach(world -> {
+            String worldName = world.getRegistryKey().getValue().toString();
+            AtomicInteger worldCount = new AtomicInteger(0);
+            AtomicInteger asyncCount = new AtomicInteger(0);
 
-                        if (++entityCurrentSteps % stepsPer == 0) {
-                            entityCurrentPos = (entityCurrentPos + 1) % samples;
-                            entityLiveValues = Math.min(entityLiveValues + 1, samples);
-                            maxEntities[entityCurrentPos] = 0;
-                        }
-                        maxEntities[entityCurrentPos] = Math.max(maxEntities[entityCurrentPos], entities);
-                    } else {
-                        resetAll();
+            world.entityList.forEach(entity -> {
+                if (entity.isAlive()) {
+                    worldCount.incrementAndGet();
+                    totalEntities.incrementAndGet();
+                    if (!ParallelProcessor.shouldTickSynchronously(entity)) {
+                        asyncCount.incrementAndGet();
+                        totalAsyncEntities.incrementAndGet();
                     }
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            });
+
+            message.append(Text.literal("\n" + worldName + ": ").styled(style -> style.withColor(Formatting.YELLOW)))
+                    .append(Text.literal(String.valueOf(worldCount.get())).styled(style -> style.withColor(Formatting.GREEN)))
+                    .append(Text.literal(" entities (").styled(style -> style.withColor(Formatting.GRAY)))
+                    .append(Text.literal(String.valueOf(asyncCount.get())).styled(style -> style.withColor(Formatting.AQUA)))
+                    .append(Text.literal(" async)").styled(style -> style.withColor(Formatting.GRAY)));
         });
 
+        message.append(Text.literal("\nTotal Entities: ").styled(style -> style.withColor(Formatting.WHITE)))
+                .append(Text.literal(String.valueOf(totalEntities.get())).styled(style -> style.withColor(Formatting.GOLD)))
+                .append(Text.literal(" (").styled(style -> style.withColor(Formatting.GRAY)))
+                .append(Text.literal(String.valueOf(totalAsyncEntities.get())).styled(style -> style.withColor(Formatting.AQUA)))
+                .append(Text.literal(" async)").styled(style -> style.withColor(Formatting.GRAY)));
+
+        source.sendFeedback(() -> message, true);
+    }
+
+    private static double calculateAverageThreads() {
+        if (threadSamples.isEmpty()) {
+            return 0.0;
+        }
+        int sum = 0;
+        int count = 0;
+        for (Integer sample : threadSamples) {
+            sum += sample;
+            count++;
+        }
+        return count > 0 ? (double) sum / count : 0.0;
+    }
+
+    public static void runStatsThread() {
+        if (statsThread != null && statsThread.isAlive()) {
+            return;
+        }
+
+        statsThread = new Thread(() -> {
+            while (isRunning && !Thread.currentThread().isInterrupted()) {
+                try {
+                    updateStats();
+                    Thread.sleep(SAMPLING_INTERVAL_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }, "Async-Stats-Thread");
+
         statsThread.setDaemon(true);
-        statsThread.setName("Async Stats Thread");
         statsThread.start();
+    }
+
+    private static void updateStats() {
+        if (AsyncConfig.disabled) {
+            resetStats();
+            return;
+        }
+
+        int currentThreads = ParallelProcessor.currentEntities.get();
+
+        threadSamples.offer(currentThreads);
+
+        while (threadSamples.size() > MAX_SAMPLES) {
+            threadSamples.poll();
+        }
+    }
+
+    private static void resetStats() {
+        threadSamples.clear();
+    }
+
+    public static void shutdown() {
+        isRunning = false;
+        if (statsThread != null) {
+            statsThread.interrupt();
+        }
     }
 }

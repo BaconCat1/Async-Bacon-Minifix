@@ -26,7 +26,6 @@ public class Async implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTING.register(server -> {
             LOGGER.info("Async Setting up thread-pool...");
             ParallelProcessor.setupThreadPool(AsyncConfig.getParallelism());
-            StatsCommand.resetAll();
         });
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
@@ -37,6 +36,7 @@ public class Async implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             LOGGER.info("Shutting down Async thread pool...");
             ParallelProcessor.stop();
+            StatsCommand.shutdown();
         });
 
         LOGGER.info("Async Initialized successfully");

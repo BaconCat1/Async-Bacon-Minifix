@@ -78,7 +78,7 @@ public class ParallelProcessor {
         }
     }
 
-    private static boolean shouldTickSynchronously(Entity entity) {
+    public static boolean shouldTickSynchronously(Entity entity) {
         if (AsyncConfig.disabled || blacklistedEntity.contains(entity.getUuid())) {
             return true;
         }
