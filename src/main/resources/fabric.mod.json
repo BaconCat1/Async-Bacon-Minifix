@@ -38,13 +38,13 @@
   "custom": {
     "lithium:options": {
       "entity.inactive_navigations": false,
-      "experimental.entity.item_entity_merging": false
+      "experimental.entity.item_entity_merging": false,
+      "entity.collisions.unpushable_cramming": false
     }
   },
   "suggests": {
   },
   "breaks": {
-    "sepals": "*",
     "moonrise": "*"
   }
 }

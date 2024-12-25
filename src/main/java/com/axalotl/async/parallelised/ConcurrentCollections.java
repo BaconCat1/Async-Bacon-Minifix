@@ -19,7 +19,6 @@ public final class ConcurrentCollections {
     private static final Logger LOGGER = LogManager.getLogger(ConcurrentCollections.class);
     
     private static final int DEFAULT_INITIAL_CAPACITY = 16;
-    private static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
     private ConcurrentCollections() {
         throw new AssertionError("Utility class should not be instantiated");

@@ -6,6 +6,7 @@
   "mixins": [
     "c2me.CheckedThreadLocalRandomMixin",
     "entity.AllayEntityMixin",
+    "entity.BeeEntityMixin",
     "entity.DamageTrackerMixin",
     "entity.DolphinEntityMixin",
     "entity.EntityIndexMixin",
