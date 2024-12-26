@@ -21,13 +21,15 @@ import java.util.function.Consumer;
 
 public class ParallelProcessor {
     private static final Logger LOGGER = LogManager.getLogger();
+
     @Getter
     @Setter
     public static MinecraftServer server;
+
     public static AtomicInteger currentEntities = new AtomicInteger();
     private static final AtomicInteger ThreadPoolID = new AtomicInteger();
     private static ExecutorService tickPool;
-    private static final Queue<CompletableFuture<Void>> taskQueue = new ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<CompletableFuture<Void>> taskQueue = new ConcurrentLinkedQueue<>();
     public static final Set<UUID> blacklistedEntity = ConcurrentHashMap.newKeySet();
     private static final Map<String, Set<Thread>> mcThreadTracker = new ConcurrentHashMap<>();
     public static final Set<Class<?>> specialEntities = Set.of(
@@ -69,7 +71,7 @@ public class ParallelProcessor {
                     () -> performAsyncEntityTick(tickConsumer, entity),
                     tickPool
             ).exceptionally(e -> {
-                LOGGER.error("Error ticking entity {} asynchronously, switching to synchronous processing", entity.getType().getName(), e);
+                logEntityError("Error ticking asynchronously, switching to synchronous processing", entity, e);
                 tickSynchronously(tickConsumer, entity);
                 blacklistedEntity.add(entity.getUuid());
                 return null;
@@ -79,13 +81,9 @@ public class ParallelProcessor {
     }
 
     public static boolean shouldTickSynchronously(Entity entity) {
-        if (AsyncConfig.disabled || blacklistedEntity.contains(entity.getUuid())) {
-            return true;
-        }
-        return specialEntities.contains(entity.getClass()) ||
-                tickPortalSynchronously(entity) ||
-                entity instanceof AbstractMinecartEntity ||
-                (AsyncConfig.disableTNT && entity instanceof TntEntity);
+        return AsyncConfig.disabled || blacklistedEntity.contains(entity.getUuid()) || specialEntities.contains(entity.getClass())
+                || tickPortalSynchronously(entity) || entity instanceof AbstractMinecartEntity
+                || (AsyncConfig.disableTNT && entity instanceof TntEntity);
     }
 
     private static boolean tickPortalSynchronously(Entity entity) {
@@ -95,14 +93,11 @@ public class ParallelProcessor {
         return entity instanceof ProjectileEntity;
     }
 
-
     private static void tickSynchronously(Consumer<Entity> tickConsumer, Entity entity) {
         try {
             tickConsumer.accept(entity);
         } catch (Exception e) {
-            LOGGER.error("Error ticking entity {} synchronously",
-                    entity.getType().getName(),
-                    e);
+            logEntityError("Error ticking synchronously", entity, e);
         }
     }
 
@@ -114,7 +109,6 @@ public class ParallelProcessor {
             currentEntities.decrementAndGet();
         }
     }
-
 
     public static void postEntityTick() {
         if (!AsyncConfig.disabled) {
@@ -148,5 +142,9 @@ public class ParallelProcessor {
         } catch (InterruptedException e) {
             tickPool.shutdownNow();
         }
+    }
+
+    private static void logEntityError(String message, Entity entity, Throwable e) {
+        LOGGER.error("{} Entity Type: {}, UUID: {}", message, entity.getType().getName(), entity.getUuid(), e);
     }
 }
