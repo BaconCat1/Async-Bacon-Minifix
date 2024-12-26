@@ -1,6 +1,7 @@
 package com.axalotl.async;
 
 import com.axalotl.async.config.AsyncConfig;
+import com.axalotl.async.parallelised.ConcurrentCollections;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.entity.Entity;
@@ -31,7 +32,7 @@ public class ParallelProcessor {
     private static ExecutorService tickPool;
     private static final ConcurrentLinkedQueue<CompletableFuture<Void>> taskQueue = new ConcurrentLinkedQueue<>();
     public static final Set<UUID> blacklistedEntity = ConcurrentHashMap.newKeySet();
-    private static final Map<String, Set<Thread>> mcThreadTracker = new ConcurrentHashMap<>();
+    private static final Map<String, Set<Thread>> mcThreadTracker = ConcurrentCollections.newHashMap();
     public static final Set<Class<?>> specialEntities = Set.of(
             FallingBlockEntity.class,
             PlayerEntity.class,

@@ -32,6 +32,7 @@
     "entity.SectionedEntityCacheMixin",
     "entity.ServerEntityManagerListenerMixin",
     "entity.ServerPlayerEntityMixin",
+    "entity.TemptationsSensorMixin",
     "entity.VillagerEntityMixin",
     "entity.VillagerGossipsMixin",
     "server.DedicatedServerWatchdogMixin",

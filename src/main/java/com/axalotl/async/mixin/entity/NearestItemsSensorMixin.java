@@ -1,46 +1,34 @@
 package com.axalotl.async.mixin.entity;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.ai.brain.Brain;
-import net.minecraft.entity.ai.brain.MemoryModuleType;
 import net.minecraft.entity.ai.brain.sensor.NearestItemsSensor;
+import net.minecraft.entity.ai.brain.sensor.Sensor;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.ToDoubleFunction;
 
 @Mixin(NearestItemsSensor.class)
-public class NearestItemsSensorMixin {
-    @Inject(method = "sense(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/entity/mob/MobEntity;)V", at = @At("HEAD"), cancellable = true)
-    private void onSense(ServerWorld serverWorld, MobEntity mobEntity, CallbackInfo ci) {
-        Brain<?> brain = mobEntity.getBrain();
-        List<ItemEntity> list = serverWorld.getEntitiesByClass(ItemEntity.class, mobEntity.getBoundingBox().expand(32.0, 16.0, 32.0), itemEntity -> true);
-        ConcurrentSkipListSet<ItemEntity> sortedItems = new ConcurrentSkipListSet<>((item1, item2) -> {
-            int distanceCompare = Double.compare(mobEntity.squaredDistanceTo(item1), mobEntity.squaredDistanceTo(item2));
-            if (distanceCompare != 0) {
-                return distanceCompare;
-            }
-            int idCompare = Integer.compare(item1.getId(), item2.getId());
-            if (idCompare != 0) {
-                return idCompare;
-            }
-            return Integer.compare(System.identityHashCode(item1), System.identityHashCode(item2));
-        });
-        sortedItems.addAll(list);
-        ObjectArrayList<ItemEntity> sortedItemList = new ObjectArrayList<>(sortedItems);
-        Optional<ItemEntity> optionalItem = sortedItemList.stream()
-                .filter(itemEntity -> mobEntity.canGather(serverWorld, itemEntity.getStack()))
-                .filter(itemEntity -> itemEntity.isInRange(mobEntity, 32.0))
-                .filter(mobEntity::canSee)
-                .findFirst();
-        brain.remember(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, optionalItem);
-        ci.cancel();
+public abstract class NearestItemsSensorMixin extends Sensor<MobEntity> {
+
+    @Redirect(method = "sense(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/entity/mob/MobEntity;)V",
+            at = @At(value = "INVOKE", target = "Ljava/util/Comparator;comparingDouble(Ljava/util/function/ToDoubleFunction;)Ljava/util/Comparator;"))
+    private Comparator<ItemEntity> sense(ToDoubleFunction<? super ItemEntity> keyExtractor, ServerWorld world, MobEntity entity) {
+        Map<ItemEntity, Vec3d> positionCache = new HashMap<>();
+        return (item1, item2) -> {
+            Vec3d pos1 = positionCache.computeIfAbsent(item1, Entity::getPos);
+            Vec3d pos2 = positionCache.computeIfAbsent(item2, Entity::getPos);
+            double dist1 = entity.squaredDistanceTo(pos1);
+            double dist2 = entity.squaredDistanceTo(pos2);
+            return Double.compare(dist1, dist2);
+        };
     }
 }
