@@ -83,7 +83,7 @@ public class ParallelProcessor {
 
     public static boolean shouldTickSynchronously(Entity entity) {
         return AsyncConfig.disabled || blacklistedEntity.contains(entity.getUuid()) || specialEntities.contains(entity.getClass())
-                || tickPortalSynchronously(entity) || entity instanceof AbstractMinecartEntity
+                || tickPortalSynchronously(entity) || entity.hasPlayerRider() || entity instanceof AbstractMinecartEntity
                 || (AsyncConfig.disableTNT && entity instanceof TntEntity);
     }
 
