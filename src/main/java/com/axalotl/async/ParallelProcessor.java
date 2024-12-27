@@ -30,7 +30,7 @@ public class ParallelProcessor {
     public static AtomicInteger currentEntities = new AtomicInteger();
     private static final AtomicInteger ThreadPoolID = new AtomicInteger();
     private static ExecutorService tickPool;
-    private static final ConcurrentLinkedQueue<CompletableFuture<Void>> taskQueue = new ConcurrentLinkedQueue<>();
+    private static final Queue<CompletableFuture<Void>> taskQueue = new ConcurrentLinkedQueue<>();
     public static final Set<UUID> blacklistedEntity = ConcurrentHashMap.newKeySet();
     private static final Map<String, Set<Thread>> mcThreadTracker = ConcurrentCollections.newHashMap();
     public static final Set<Class<?>> specialEntities = Set.of(

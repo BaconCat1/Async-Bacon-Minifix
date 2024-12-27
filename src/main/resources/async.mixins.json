@@ -47,6 +47,7 @@
     "world.ChunkHolderMixin",
     "world.ChunkTicketManagerMixin",
     "world.SerializingRegionBasedStorageMixin",
+    "world.ServerChunkLoadingManagerEntityTrackerMixin",
     "world.ServerChunkLoadingManagerMixin",
     "world.ServerChunkManagerMixin",
     "world.ServerWorldMixin",
