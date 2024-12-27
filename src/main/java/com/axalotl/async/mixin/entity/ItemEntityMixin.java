@@ -6,6 +6,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.MovementType;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -47,6 +48,13 @@ public abstract class ItemEntityMixin extends Entity {
     public void tickBlockCollision(Vec3d lastRenderPos, Vec3d pos) {
         synchronized (lock) {
             super.tickBlockCollision(lastRenderPos, pos);
+        }
+    }
+
+    @WrapMethod(method = "onPlayerCollision")
+    private void onPlayerCollision(PlayerEntity player, Operation<Void> original) {
+        synchronized (lock) {
+            original.call(player);
         }
     }
 }
