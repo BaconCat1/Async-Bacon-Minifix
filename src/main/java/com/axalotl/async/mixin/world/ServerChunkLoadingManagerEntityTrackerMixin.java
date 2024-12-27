@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import java.util.Set;
 
 @Mixin(value = ServerChunkLoadingManager.EntityTracker.class)
-public abstract class ServerChunkLoadingManagerEntityTrackerMixin {
+public class ServerChunkLoadingManagerEntityTrackerMixin {
 
     @Shadow
     final private Set<PlayerAssociatedNetworkHandler> listeners = ConcurrentCollections.newHashSet();
