@@ -14,10 +14,18 @@ public class RaidMixin {
     @Unique
     private static final ReentrantLock lock = new ReentrantLock();
 
+    @WrapMethod(method = "addToWave(ILnet/minecraft/entity/raid/RaiderEntity;)Z")
+    private boolean addToWave(int wave, RaiderEntity entity, Operation<Boolean> original) {
+        synchronized (lock) {
+            return original.call(wave, entity);
+        }
+    }
+
     @WrapMethod(method = "addToWave(ILnet/minecraft/entity/raid/RaiderEntity;Z)Z")
     private boolean addToWave(int wave, RaiderEntity entity, boolean countHealth, Operation<Boolean> original) {
         synchronized (lock) {
             return original.call(wave, entity, countHealth);
         }
     }
+
 }
