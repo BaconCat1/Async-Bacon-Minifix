@@ -42,10 +42,10 @@ Concurrent Chunk Management Engine, Fabric API, FerriteCore, Lithium, ScalableLu
 </details>
 
 ## 🔧 Commands
-
 - `/async config toggle` — Enables or disables the mod in-game (no server restart required). Use this command to instantly see how Async improves your server.
 - `/async config setEntityMoveSync` — Disables parallel processing of entity movement. Useful for preventing potential desynchronization with vanilla logic (disabled by default). Always enabled for items.
-- `/async config setDisableTNT` — Enables or disables parallel processing of TNT. (Disabled by default as the feature is unstable).
+- `/async config synchronizedEntities add` — Adds selected entity to synchronized processing.
+- `/async config synchronizedEntities remove` — Removes selected entity from synchronized processing.
 - `/async stats` — Displays the number of threads in use.
 - `/async stats entity` — Shows the number of entities processed by Async in various worlds.
 
