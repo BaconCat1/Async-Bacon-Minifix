@@ -31,9 +31,6 @@ dependencies {
     modImplementation 'com.electronwill.night-config:toml:3.8.1'
     include group: 'com.electronwill.night-config', name: 'toml', version: '3.8.1'
     include group: 'com.electronwill.night-config', name: 'core', version: '3.8.1'
-    // Mods
-    modCompileOnly files('c2me-fixes-worldgen-threading-issues-mc1.21.1-0.3.0+alpha.0.291.jar')
-    modCompileOnly files('c2me-fixes-general-threading-issues-mc1.21.1-0.3.0+alpha.0.291.jar')
 }
 
 processResources {
