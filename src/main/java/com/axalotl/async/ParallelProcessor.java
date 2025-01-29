@@ -131,7 +131,7 @@ public class ParallelProcessor {
                         futuresList.toArray(new CompletableFuture[0])
                 );
 
-                allTasks.orTimeout(60, TimeUnit.SECONDS).exceptionally(ex -> {
+                allTasks.orTimeout(120, TimeUnit.SECONDS).exceptionally(ex -> {
                     LOGGER.error("Timeout during entity tick processing", ex);
                     server.shutdown();
                     return null;
