@@ -16,7 +16,7 @@ public class BrainMixin {
     private static final ReentrantLock lock = new ReentrantLock();
 
     @WrapMethod(method = "tick")
-    private void canExitHive(ServerWorld world, LivingEntity entity, Operation<Void> original) {
+    private void tick(ServerWorld world, LivingEntity entity, Operation<Void> original) {
         synchronized (lock) {
             original.call(world, entity);
         }
