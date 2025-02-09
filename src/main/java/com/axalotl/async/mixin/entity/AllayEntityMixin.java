@@ -14,12 +14,12 @@ import java.util.concurrent.locks.ReentrantLock;
 @Mixin(AllayEntity.class)
 public abstract class AllayEntityMixin implements InventoryOwner {
     @Unique
-    private static final ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
 
     @WrapMethod(method = "loot")
     private void loot(ServerWorld world, ItemEntity itemEntity, Operation<Void> original) {
         synchronized (lock) {
-            if (!itemEntity.isRemoved() && itemEntity.getEntityWorld() != null) {
+            if (!itemEntity.isRemoved()) {
                 original.call(world, itemEntity);
             }
         }

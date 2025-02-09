@@ -23,9 +23,7 @@ public abstract class FrogEntityMixin extends AnimalEntity {
 
     @WrapMethod(method = "breed(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/entity/passive/AnimalEntity;)V")
     private void breed(ServerWorld world, AnimalEntity other, Operation<Void> original) {
-        if (this.getId() > other.getId()) {
-            return;
-        }
+        if (this.getId() > other.getId()) return;
         FrogEntityMixin otherMixin = (FrogEntityMixin) other;
         if (this.breedingFlag.compareAndSet(false, true) && otherMixin.breedingFlag.compareAndSet(false, true)) {
             try {
