@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @Mixin(ItemEntity.class)
 public abstract class ItemEntityMixin extends Entity {
     @Unique
-    private final ReentrantLock lock = new ReentrantLock();
+    private static final ReentrantLock lock = new ReentrantLock();
 
     public ItemEntityMixin(EntityType<?> type, World world) {
         super(type, world);

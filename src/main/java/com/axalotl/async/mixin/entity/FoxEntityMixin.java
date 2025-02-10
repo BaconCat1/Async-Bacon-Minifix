@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @Mixin(FoxEntity.class)
 public class FoxEntityMixin {
     @Unique
-    private final ReentrantLock lock = new ReentrantLock();
+    private static final ReentrantLock lock = new ReentrantLock();
 
     @WrapMethod(method = "loot")
     private void loot(ServerWorld world, ItemEntity itemEntity, Operation<Void> original) {

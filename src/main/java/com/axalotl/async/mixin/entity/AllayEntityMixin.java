@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @Mixin(AllayEntity.class)
 public abstract class AllayEntityMixin implements InventoryOwner {
     @Unique
-    private final ReentrantLock lock = new ReentrantLock();
+    private static final ReentrantLock lock = new ReentrantLock();
 
     @WrapMethod(method = "loot")
     private void loot(ServerWorld world, ItemEntity itemEntity, Operation<Void> original) {
