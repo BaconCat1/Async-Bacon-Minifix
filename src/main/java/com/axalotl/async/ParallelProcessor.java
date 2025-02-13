@@ -88,13 +88,13 @@ public class ParallelProcessor {
 
     public static boolean shouldTickSynchronously(Entity entity) {
         return AsyncConfig.disabled ||
-                blacklistedEntity.contains(entity.getUuid()) ||
+                entity instanceof ProjectileEntity ||
+                entity instanceof AbstractMinecartEntity ||
                 specialEntities.contains(entity.getClass()) ||
+                blacklistedEntity.contains(entity.getUuid()) ||
                 AsyncConfig.synchronizedEntities.contains(EntityType.getId(entity.getType())) ||
                 isPortalTickRequired(entity) ||
-                entity.hasPlayerRider() ||
-                entity instanceof ProjectileEntity ||
-                entity instanceof AbstractMinecartEntity;
+                entity.hasPlayerRider();
     }
 
     private static boolean isPortalTickRequired(Entity entity) {
