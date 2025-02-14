@@ -4,7 +4,6 @@ import com.axalotl.async.parallelised.ConcurrentCollections;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.random.RandomSequence;
 import net.minecraft.util.math.random.RandomSequencesState;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
@@ -13,6 +12,5 @@ import java.util.Map;
 @Mixin(RandomSequencesState.class)
 public class RandomSequencesStateMixin {
     @Shadow
-    @Final
-    private Map<Identifier, RandomSequence> sequences = ConcurrentCollections.newHashMap();
+    private final Map<Identifier, RandomSequence> sequences = ConcurrentCollections.newHashMap();
 }
