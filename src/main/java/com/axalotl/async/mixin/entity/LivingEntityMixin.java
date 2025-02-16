@@ -44,7 +44,7 @@ public abstract class LivingEntityMixin extends Entity {
     }
 
     @WrapMethod(method = "tickStatusEffects")
-    private synchronized void tickStatusEffects(Operation<Void> original) {
+    private void tickStatusEffects(Operation<Void> original) {
         synchronized (lock) {
             original.call();
         }

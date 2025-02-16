@@ -67,21 +67,21 @@ public class ParallelProcessor {
 
     public static void callEntityTick(Consumer<Entity> tickConsumer, Entity entity) {
         if (shouldTickSynchronously(entity)) {
-            server.execute(() -> tickSynchronously(tickConsumer, entity));
+            tickSynchronously(tickConsumer, entity);
         } else {
             if (!tickPool.isShutdown() && !tickPool.isTerminated()) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() ->
                         performAsyncEntityTick(tickConsumer, entity), tickPool
                 ).exceptionally(e -> {
                     logEntityError("Error in async tick, switching to synchronous", entity, e);
-                    server.execute(() -> tickSynchronously(tickConsumer, entity));
+                    tickSynchronously(tickConsumer, entity);
                     blacklistedEntity.add(entity.getUuid());
                     return null;
                 });
-                taskQueue.offer(future);
+                taskQueue.add(future);
             } else {
                 logEntityError("Rejected task due to ExecutorService shutdown", entity, null);
-                server.execute(() -> tickSynchronously(tickConsumer, entity));
+                tickSynchronously(tickConsumer, entity);
             }
         }
     }
@@ -137,10 +137,11 @@ public class ParallelProcessor {
                     server.shutdown();
                     return null;
                 });
-                server.execute(() -> server.getWorlds().forEach(world -> {
+
+                server.getWorlds().forEach(world -> {
                     world.getChunkManager().executeQueuedTasks();
                     world.getChunkManager().mainThreadExecutor.runTasks(allTasks::isDone);
-                }));
+                });
             } catch (CompletionException e) {
                 LOGGER.error("Critical error during entity tick processing", e);
                 server.shutdown();
