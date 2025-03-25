@@ -62,7 +62,7 @@ public abstract class ServerWorldMixin extends World implements StructureWorldAc
     @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/EntityList;forEach(Ljava/util/function/Consumer;)V"))
     private void overwriteEntityTicking(EntityList entityList, Consumer<Entity> action) {
         Profiler profiler = Profilers.get();
-        entityList.forEach((entity) -> {
+        entityList.forEach(entity -> {
             if (!entity.isRemoved()) {
                 if (!this.getTickManager().shouldSkipTick(entity)) {
                     profiler.push("checkDespawn");

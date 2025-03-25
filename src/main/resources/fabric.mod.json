@@ -32,13 +32,12 @@
   "depends": {
     "fabricloader": "*",
     "fabric-api": "*",
-    "minecraft": "1.21.4",
+    "minecraft": "1.21.5",
     "java": ">=21"
   },
   "custom": {
     "lithium:options": {
       "entity.inactive_navigations": false,
-      "entity.collisions.unpushable_cramming": false,
       "mixin.experimental": false
     }
   },
