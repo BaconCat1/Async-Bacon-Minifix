@@ -47,7 +47,7 @@ public class ConfigCommand {
                             return 1;
                         })
                         .then(literal("add")
-                                .then(CommandManager.argument("entity", IdentifierArgumentType.identifier()).suggests(SuggestionProviders.SUMMONABLE_ENTITIES).executes(cmdCtx -> {
+                                .then(CommandManager.argument("entity", IdentifierArgumentType.identifier()).suggests(SuggestionProviders.cast(SuggestionProviders.SUMMONABLE_ENTITIES)).executes(cmdCtx -> {
                                     Identifier id = IdentifierArgumentType.getIdentifier(cmdCtx, "entity");
 
                                     if (AsyncConfig.synchronizedEntities.contains(id)) {
