@@ -167,43 +167,49 @@ public class ParallelProcessor {
 
     public static void postEntityTick() {
         if (!AsyncConfig.disabled) {
-            try {
-                List<CompletableFuture<?>> futuresList = new ArrayList<>();
-                CompletableFuture<?> future;
-                while ((future = taskQueue.poll()) != null) {
-                    futuresList.add(future);
-                }
+            List<CompletableFuture<?>> futuresList = new ArrayList<>();
+            CompletableFuture<?> future;
+            while ((future = taskQueue.poll()) != null) {
+                futuresList.add(future);
+            }
 
-                CompletableFuture<?> allTasks = CompletableFuture.allOf(
-                        futuresList.toArray(new CompletableFuture[0])
-                );
+            CompletableFuture<?> allTasks = CompletableFuture.allOf(
+                    futuresList.toArray(new CompletableFuture[0])
+            );
 
-                allTasks.orTimeout(((MinecraftDedicatedServer) server).getMaxTickTime(), TimeUnit.MILLISECONDS).exceptionally(ex -> {
-                    crash("Timeout during entity tick processing: ", ex);
+            long maxTickTime = ((MinecraftDedicatedServer) server).getMaxTickTime();
+            if (maxTickTime > 0) {
+                allTasks
+                        .orTimeout(maxTickTime, TimeUnit.MILLISECONDS)
+                        .exceptionally(ex -> {
+                            Throwable cause = ex instanceof CompletionException
+                                    ? ex.getCause() : ex;
+                            if (cause instanceof TimeoutException) {
+                                crash("Timeout during entity tick processing: ", cause);
+                            } else {
+                                LOGGER.error("Error during entity tick processing: ", cause);
+                            }
+                            return null;
+                        });
+            } else {
+                allTasks.exceptionally(ex -> {
+                    Throwable cause = ex instanceof CompletionException
+                            ? ex.getCause() : ex;
+                    LOGGER.error("Error during entity tick processing: ", cause);
                     return null;
                 });
-
-                server.getWorlds().forEach(world -> {
-                    world.getChunkManager().executeQueuedTasks();
-                    world.getChunkManager().mainThreadExecutor.runTasks(allTasks::isDone);
-                });
-            } catch (CompletionException e) {
-                crash("Critical error during entity tick processing: ", e);
             }
+
+            server.getWorlds().forEach(world -> {
+                world.getChunkManager().executeQueuedTasks();
+                world.getChunkManager().mainThreadExecutor.runTasks(allTasks::isDone);
+            });
         }
     }
 
     public static void stop() {
         if (tickPool != null && !tickPool.isShutdown()) {
             tickPool.shutdown();
-            try {
-                if (!tickPool.awaitTermination(10, TimeUnit.SECONDS)) {
-                    tickPool.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                tickPool.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
         }
     }
 
